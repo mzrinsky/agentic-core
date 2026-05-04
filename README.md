@@ -1,4 +1,3 @@
-Apply
 # Agentic Core
 
 > [!IMPORTANT]
