@@ -1,0 +1,32 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# User-Specific settings
+.env
+
+# log files
+*.log
+
+# agent created outputs
+agent/memories/*
+!agent/memories/.gitkeep
+agent/skills/*
+!agent/skills/.gitkeep
+agent/workspace/*
+!agent/workspace/.gitkeep
+
+# models
+data/models/*
+!data/models/.gitkeep
+
+# dead tasks
+dead_letter/*
+!dead_letter/.gitkeep
