@@ -1,11 +1,11 @@
 name: 💼 Corporate Sponsorship
-description: Express interest in sponsoring the development of Agnetic Core.
+description: Express interest in sponsoring the development of Agentic Core.
 labels: ["sponsorship", "corporate"]
 body:
   - type: markdown
     attributes:
       value: |
-        Thank you for your interest in supporting Agnetic Core! Please provide a few details so we can start the conversation.
+        Thank you for your interest in supporting Agentic Core! Please provide a few details so we can start the conversation.
   - type: input
     id: organization
     attributes:
@@ -31,4 +31,4 @@ body:
     id: goals
     attributes:
       label: Your Goals
-      placeholder: "Tell us a bit about what your organization is building and why Agnetic Core interests you."
+      placeholder: "Tell us a bit about what your organization is building and why Agentic Core interests you."

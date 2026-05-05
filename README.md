@@ -170,4 +170,4 @@ If Agentic Core is helpful to your workflow or provides a useful blueprint for y
 [![ko-fi](https://img.shields.io/badge/Ko-fi-f16233?style=for-the-badge&logo=ko-fi&logoColor=white&color=ff005c)](https://ko-fi.com/creamcitymatt)
 
 ### 🏢 Corporate Sponsorship
-If your organization is building AI orchestration tools or complex agentic pipelines and would like to sponsor the development of this reference implementation, please reach out via [LinkedIn](https://www.linkedin.com/in/matt-zrinsky) or [open a sponsorship issue](https://github.com/mzrinsky/agnetic-core/issues/new?template=sponsorship.yml) in the repository.
+If your organization is building AI orchestration tools or complex agentic pipelines and would like to sponsor the development of this reference implementation, please reach out via [LinkedIn](https://www.linkedin.com/in/matt-zrinsky) or [open a sponsorship issue](https://github.com/mzrinsky/agentic-core/issues/new?template=sponsorship.yml) in the repository.

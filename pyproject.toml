@@ -1,5 +1,5 @@
 [project]
-name = "agnetic-core"
+name = "agentic-core"
 version = "0.1.0"
 description = "A reference implementation of LangChain Deepagents framework customized for Gemma 4"
 readme = "README.md"

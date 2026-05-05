@@ -7,7 +7,7 @@ resolution-markers = [
 ]
 
 [[package]]
-name = "agnetic-core"
+name = "agentic-core"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
