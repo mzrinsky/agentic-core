@@ -139,7 +139,7 @@ class AgentFactory:
                 "When spawning a sub-agent, you MUST use the following argument names exactly:\n"
                 "- `subagent_type`: The name of the sub-agent (e.g., 'complex-reasoner', 'chat-agent').\n"
                 "- `description`: A detailed string containing the instructions and the expected output format.\n\n"
-                "Example: `task{subagent_type:'complex-reasoner', description:'Analyze the memory leak in src/main.py and provide a fix.'}`\n\n"
+                "Example: `<|tool_call>call:task{subagent_type:'complex-reasoner', description:'Analyze the memory leak in src/main.py and provide a fix.'}`\n\n"
                 "## STORAGE PROTOCOL:\n"
                 "- Persistent knowledge $\rightarrow$ `/memories/`\n"
                 "- New AI-generated skills $\rightarrow$ `/skills/`\n"

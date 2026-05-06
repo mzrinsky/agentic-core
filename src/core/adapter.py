@@ -174,7 +174,6 @@ class LlamaServerAdapter(BaseChatModel):
         **kwargs
     ) -> Iterator[ChatGenerationChunk]:
         openai_msgs = self._prepare_openai_messages(messages)
-        tool_prompt = self._format_tools_for_prompt()
 
         stream = self._client.chat.completions.create(
             model=self.model,
