@@ -30,3 +30,10 @@ data/models/*
 # dead tasks
 dead_letter/*
 !dead_letter/.gitkeep
+
+# User specific configs
+config/CHAT-PROMPT.md
+config/USER-PROFILE.md
+
+# VSCode (user specific currently)
+.continue/

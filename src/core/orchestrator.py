@@ -4,6 +4,7 @@ from deepagents import create_deep_agent
 import deepagents.graph as graph
 import deepagents.middleware.subagents as subagents
 import deepagents.middleware.skills as skills
+import deepagents.middleware.filesystem as filesystem
 from src.core.adapter import LlamaServerAdapter
 from src.core.state import CleanKwargsMiddleware
 from src.core.backend import create_agent_backend
@@ -65,6 +66,7 @@ class AgentFactory:
         graph.BASE_AGENT_PROMPT = "" # we pass our own below..
         skills.SKILLS_SYSTEM_PROMPT = self.blueprints.get("skills_protocol", "")
         subagents.TASK_SYSTEM_PROMPT = self.blueprints.get("task_protocol", "")
+        filesystem._FILESYSTEM_SYSTEM_PROMPT_TEMPLATE = self.blueprints.get("files_protocol", "")
         
 
     def build_agent(self, tools: List[Any], base_skills_path: str) -> Tuple[Any, Any]:
@@ -107,7 +109,7 @@ class AgentFactory:
                     f"## INTERACTION STYLE:\n{self.blueprints['chat_style']}\n\n"
                     f"## RULES:\n1. Be helpful and concise. 2. Use the provided user context to tailor responses. 3. Avoid assistant-speak."
                 ),
-                "tools": [] 
+                "tools": [],
             }, 
             {
                 "name": "complex-reasoner",

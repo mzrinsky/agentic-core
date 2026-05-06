@@ -48,7 +48,8 @@ async def process_task(agent, task_id, task_data):
     
     reasoning = False
     forming_toolcall = False
-    async for event in agent.astream_events({"messages": [("user", user_input)]}, version="v2"):
+    config = {"recursion_limit": 250}
+    async for event in agent.astream_events({"messages": [("user", user_input)]}, config=config, version="v2"):
         debug_log_chunk(event)
         event_type = event['event']
         

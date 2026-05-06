@@ -27,6 +27,7 @@ class ConfigLoader:
             "fast": self.load_file("FAST-PROCESSOR.md", ""),
             "task_protocol": self.load_file("TASK-PROMPT.md", ""),
             "skills_protocol": self.load_file("SKILLS-PROMPT.md", ""),
+            "files_protocol": self.load_file("FILESYSTEM-PROMPT.md", ""),
         }
 
     def get_log_level(self) -> int:
