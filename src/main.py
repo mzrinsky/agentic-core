@@ -66,7 +66,7 @@ async def main():
 
     # Assemble the Agent
     # We inject the system tools here. Skills path is handled by the factory.
-    agent, backend = factory.build_agent(
+    agent, backend = await factory.build_agent(
         tools=[schedule_task, send_discord_notification],
         base_skills_path="./skills"
     )

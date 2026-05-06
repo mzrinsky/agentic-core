@@ -109,7 +109,7 @@ class LlamaServerAdapter(BaseChatModel):
                 args = f"{{{args_str}}}"
                 is_valid = False
                 error = str(e)
-                
+
             tool_call = {
                 "name": tool_name,
                 "args": args,

@@ -1,4 +1,5 @@
 import os
+import yaml
 
 class ConfigLoader:
     """
@@ -39,6 +40,35 @@ class ConfigLoader:
             return int(os.getenv("AGENT_LOG_LEVEL", 2))
         except (ValueError, TypeError):
             return 2
+
+    def load_yaml(self, filename: str, default: dict = {}) -> dict:
+        path = os.path.join(self.config_dir, filename)
+        try:
+            if os.path.exists(path):
+                with open(path, "r", encoding="utf-8") as f:
+                    return yaml.safe_load(f) or default
+        except Exception as e:
+            print(f"Error loading YAML {path}: {e}")
+        return default
+
+    def get_mcp_configs(self, agent_config_dir: str = "./agent/config") -> dict:
+        """
+        Combines MCP tool configs from system root and agent directory.
+        """
+        system_mcp = self.load_yaml("mcp-tools.yaml")
+        
+        # Load from agent/config/mcp-tools.yaml
+        agent_config_path = os.path.join(agent_config_dir, "mcp-tools.yaml")
+        agent_mcp = {}
+        try:
+            if os.path.exists(agent_config_path):
+                with open(agent_config_path, "r", encoding="utf-8") as f:
+                    agent_mcp = yaml.safe_load(f) or {}
+        except Exception as e:
+            print(f"Error loading agent MCP config {agent_config_path}: {e}")
+
+        # Merge dictionaries (system configs override agent configs if keys collide)
+        return {**agent_mcp, **system_mcp}
 
     def get_model_paths(self) -> dict:
         """

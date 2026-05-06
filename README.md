@@ -33,6 +33,7 @@ This implementation demonstrates a dynamic routing strategy across different mod
 
 ### 🏗 System Components
 - **Agent Factory:** A modular system that assembles the Supervisor and specialized sub-agents.
+- **MCP Integration:** The main agent supports **Model Context Protocol (MCP)** tools, allowing it to interface with external data sources and services via standardized MCP servers.
 - **Config Loader:** A dynamic blueprint system that separates chat style and reasoning protocols from the core logic via external markdown files.
 - **Worker Loop:** The "Nervous System" that polls a Redis task queue, processing inputs and streaming reasoning/tool calls in real-time.
 - **Interface Layer:** A decoupled interface (currently Discord) that pushes user intentions into the task queue, allowing for easy swapping of the UI.
@@ -49,10 +50,13 @@ This implementation demonstrates a dynamic routing strategy across different mod
 ```text
 .
 ├── agent/
-│   ├── skills/        # Plugin-style agent-generated skills loaded via metadata
-│   ├── memories/      # Long-term persistent project knowledge
-│   └── workspace/     # Sandbox area for agent-generated files
-├── config/            # Markdown blueprints for subagents & protocols
+│   ├── config/              # Agent Generated Config
+│   │   └── mcp-config.yaml  # Agent Generated MCP server configurations
+│   ├── skills/              # Plugin-style agent-generated skills loaded via metadata
+│   ├── memories/            # Long-term persistent project knowledge
+│   └── workspace/           # Sandbox area for agent-generated files
+├── config/                  # Markdown blueprints for subagents & protocols
+│   ├── mcp-config.yaml      # MCP server configurations
 │   ├── SYSTEM-PROMPT.md
 │   ├── USER-PROFILE.md
 │   ├── CHAT-PROMPT.md
@@ -60,9 +64,9 @@ This implementation demonstrates a dynamic routing strategy across different mod
 │   ├── FAST-PROCESSOR.md
 │   ├── TASK-PROMPT.md
 │   └── SKILLS-PROMPT.md
-├── skills/            # Plugin-style skills loaded via metadata
-├── dead_letter/       # Failed task queue for debugging and reflection
-└── ...                # Core engine and infrastructure logic
+├── skills/                  # Plugin-style skills loaded via metadata
+├── dead_letter/             # Failed task queue for debugging and reflection
+└── ...                      # Core engine and infrastructure logic
 ```
 
 ## 📜 Law of Attribution

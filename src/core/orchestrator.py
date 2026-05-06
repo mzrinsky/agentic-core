@@ -10,6 +10,7 @@ from src.core.state import CleanKwargsMiddleware
 from src.core.backend import create_agent_backend
 from src.config.loader import ConfigLoader
 from src.runtime.server_manager import server_manager
+from langchain_mcp_adapters.client import MultiServerMCPClient
 
 
 class SwappableLLM(LlamaServerAdapter):
@@ -69,12 +70,23 @@ class AgentFactory:
         filesystem._FILESYSTEM_SYSTEM_PROMPT_TEMPLATE = self.blueprints.get("files_protocol", "")
         
 
-    def build_agent(self, tools: List[Any], base_skills_path: str) -> Tuple[Any, Any]:
+    async def build_agent(self, tools: List[Any], base_skills_path: str) -> Tuple[Any, Any]:
         # Update ServerManager configs from config loader before building agents
         server_manager.model_configs = self.config.get_model_paths()
         
         # Set the global system-wide prompts before creating the agent
         self._configure_global_prompts()
+
+        # Integrate MCP Tools
+        mcp_config = self.config.get_mcp_configs(agent_config_dir=os.path.join(self.agent_root, "config"))
+        if mcp_config:
+            try:
+                client = MultiServerMCPClient(mcp_config)
+                mcp_tools = await client.get_tools()
+                tools.extend(mcp_tools)
+            except Exception as e:
+                print(f"Failed to load MCP tools: {e}")
+
 
         agent_skills_path = os.path.join(self.agent_root, "skills")
 
@@ -109,7 +121,7 @@ class AgentFactory:
                     f"## INTERACTION STYLE:\n{self.blueprints['chat_style']}\n\n"
                     f"## RULES:\n1. Be helpful and concise. 2. Use the provided user context to tailor responses. 3. Avoid assistant-speak."
                 ),
-                "tools": [],
+                "tools": [] 
             }, 
             {
                 "name": "complex-reasoner",
