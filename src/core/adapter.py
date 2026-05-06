@@ -9,6 +9,7 @@ from openai import OpenAI
 import re
 import json
 import ast
+from json_repair import repair_json
 
 class LlamaServerAdapter(BaseChatModel):
     """
@@ -49,56 +50,8 @@ class LlamaServerAdapter(BaseChatModel):
         return "\n## AVAILABLE TOOLS:\n" + "\n".join(tool_descriptions) + \
                "\n\nTo call a tool, use:"
 
-    def _parse_tool_calls(self, content: str) -> List[Dict[str, Any]]:
-        if not content:
-            return []
-        
-        sanitized_content = content.replace('<|"|>', '"')
-        pattern = r"<\|tool_call>call:(\w+)\{(.*?)\}<tool_call\|>"
-        matches = re.finditer(pattern, sanitized_content, re.DOTALL)
-        tool_calls = []
-        
-        for match in matches:
-            tool_name = match.group(1)
-            args_str = match.group(2).strip()
-            
-            try:
-                fixed_args_str = re.sub(r'(\w+)\s*:', r'"\1":', args_str)
-                data = json.loads(f"{{{fixed_args_str}}}")
-                args = data if isinstance(data, dict) else {"raw": args_str}
-                is_valid = True
-            except json.JSONDecodeError:
-                try:
-                    data = ast.literal_eval(f"{{{args_str}}}")
-                    args = data if isinstance(data, dict) else {"raw": args_str}
-                    is_valid = True
-                except Exception as e:
-                    args = f"{{{args_str}}}"
-                    is_valid = False
-                    error = str(e)
-
-            tool_call = {
-                "name": tool_name,
-                "args": args,
-                "id": f"call_{id(match)}",
-            }
-            
-            if not is_valid:
-                tool_call["type"] = "invalid_tool_call"
-                tool_call["error"] = error
-            else:
-                tool_call["type"] = "tool_call"
-
-            tool_calls.append(tool_call)
-        return tool_calls
-
-    def _generate(
-        self, 
-        messages: List[BaseMessage], 
-        stop: Optional[List[str]] = None, 
-        run_manager: Optional[Any] = None, 
-        **kwargs
-    ) -> ChatResult:
+    def _prepare_openai_messages(self, messages: List[BaseMessage]) -> List[Dict[str, Any]]:
+        """Helper to unify message formatting for both _generate and _stream."""
         openai_msgs = []
         tool_prompt = self._format_tools_for_prompt()
         for m in messages:
@@ -106,9 +59,7 @@ class LlamaServerAdapter(BaseChatModel):
                 content = m.content if isinstance(m.content, list) else [{"type": "text", "text": m.content}]
                 openai_msgs.append({"role": "user", "content": content})
             elif isinstance(m, SystemMessage):
-                # Inject tool definitions into the system prompt
                 if isinstance(m.content, list):
-                    # Append tool prompt as a new text block if it's a list
                     content = m.content + ([{"type": "text", "text": tool_prompt}] if tool_prompt else [])
                 else:
                     content = m.content + tool_prompt if tool_prompt else m.content
@@ -132,6 +83,56 @@ class LlamaServerAdapter(BaseChatModel):
                 openai_msgs.append(msg_dict)
             elif isinstance(m, ToolMessage):
                 openai_msgs.append({"role": "tool", "content": m.content, "tool_call_id": m.tool_call_id})
+        return openai_msgs
+
+    def _parse_tool_calls(self, content: str) -> List[Dict[str, Any]]:
+        if not content:
+            return []
+        
+        sanitized_content = content.replace('<|"|>', '"')
+        pattern = r"<\|tool_call>call:(\w+)\{(.*?)\}(?:<tool_call\|>|$)"
+        matches = re.finditer(pattern, sanitized_content, re.DOTALL)
+        tool_calls = []
+        
+        for match in matches:
+            tool_name = match.group(1)
+            args_str = match.group(2).strip()
+            
+            try:
+                # Use json_repair to handle missing quotes and multi-line strings
+                repaired_json = repair_json(f"{{{args_str}}}")
+                args = json.loads(repaired_json)
+                if not isinstance(args, dict):
+                    args = {"raw": args_str}
+                is_valid = True
+            except Exception as e:
+                args = f"{{{args_str}}}"
+                is_valid = False
+                error = str(e)
+                
+            tool_call = {
+                "name": tool_name,
+                "args": args,
+                "id": f"call_{id(match)}",
+            }
+            
+            if not is_valid:
+                tool_call["type"] = "invalid_tool_call"
+                tool_call["error"] = error
+            else:
+                tool_call["type"] = "tool_call"
+
+            tool_calls.append(tool_call)
+        return tool_calls
+
+    def _generate(
+        self, 
+        messages: List[BaseMessage], 
+        stop: Optional[List[str]] = None, 
+        run_manager: Optional[Any] = None, 
+        **kwargs
+    ) -> ChatResult:
+        openai_msgs = self._prepare_openai_messages(messages)
 
         response = self._client.chat.completions.create(
             model=self.model,
@@ -172,39 +173,8 @@ class LlamaServerAdapter(BaseChatModel):
         run_manager: Optional[Any] = None, 
         **kwargs
     ) -> Iterator[ChatGenerationChunk]:
-        openai_msgs = []
+        openai_msgs = self._prepare_openai_messages(messages)
         tool_prompt = self._format_tools_for_prompt()
-        for m in messages:
-            if isinstance(m, HumanMessage):
-                content = m.content if isinstance(m.content, list) else [{"type": "text", "text": m.content}]
-                openai_msgs.append({"role": "user", "content": content})
-            elif isinstance(m, SystemMessage):
-                # Inject tool definitions into the system prompt
-                if isinstance(m.content, list):
-                    # Append tool prompt as a new text block if it's a list
-                    content = m.content + ([{"type": "text", "text": tool_prompt}] if tool_prompt else [])
-                else:
-                    content = m.content + tool_prompt if tool_prompt else m.content
-                openai_msgs.append({"role": "system", "content": content})
-            elif isinstance(m, AIMessage):
-                msg_dict = {"role": "assistant", "content": m.content}
-                if m.tool_calls:
-                    openai_tool_calls = []
-                    for tc in m.tool_calls:
-                        openai_tool_calls.append({
-                            "id": tc.get("id"),
-                            "type": "function",
-                            "function": {
-                                "name": tc.get("name"),
-                                "arguments": json.dumps(tc.get("args")) if isinstance(tc.get("args"), dict) else tc.get("args")
-                            }
-                        })
-                    msg_dict["tool_calls"] = openai_tool_calls
-                if "reasoning" in m.additional_kwargs:
-                    msg_dict["reasoning_content"] = m.additional_kwargs["reasoning"]
-                openai_msgs.append(msg_dict)
-            elif isinstance(m, ToolMessage):
-                openai_msgs.append({"role": "tool", "content": m.content, "tool_call_id": m.tool_call_id})
 
         stream = self._client.chat.completions.create(
             model=self.model,
@@ -255,21 +225,15 @@ class LlamaServerAdapter(BaseChatModel):
                         in_tool_call = False
                         
                         try:
-                            # Clean the raw_call to get just the JSON object { ... }
-                            # We find the first { and last } to avoid issues with the 'call:name' prefix
-                            start_idx = raw_call.find('{')
-                            end_idx = raw_call.rfind('}')
+                            sanitized_raw = raw_call.replace('<|"|>', '"')
+                            start_idx = sanitized_raw.find('{')
+                            end_idx = sanitized_raw.rfind('}')
                             if start_idx == -1 or end_idx == -1:
                                 raise ValueError("No JSON object found in tool call")
                             
-                            json_str = raw_call[start_idx : end_idx + 1]
-                            sanitized_json_str = json_str.replace('<|"|>', '"')
-                            # Handle unquoted keys
-                            fixed_json_str = re.sub(r'(?<=[{\,])\s*(\w+)\s*:', r'"\1":', sanitized_json_str)
-                            try:
-                                args = json.loads(fixed_json_str)
-                            except json.JSONDecodeError:
-                                args = ast.literal_eval(fixed_json_str)
+                            json_str = sanitized_raw[start_idx : end_idx + 1]
+                            repaired_json = repair_json(json_str)
+                            args = json.loads(repaired_json)
                             
                             yield ChatGenerationChunk(
                                 message=AIMessageChunk(
